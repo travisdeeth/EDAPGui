@@ -4,8 +4,10 @@ import json
 from pyautogui import typewrite, keyUp, keyDown
 from MousePt import MousePoint
 from pathlib import Path
-
-
+from paddleocr import PaddleOCR #I added this line
+from PIL import ImageGrab #I added this line
+import time #I added this line
+import numpy as np #I added this line
 
 """
 File: EDWayPoint.py    
@@ -150,6 +152,42 @@ class EDWayPoint:
         if self.waypoints[dest]['DockWithStation'] != "System Colonisation Ship":
             ap.keys.send('SystemMapOpen')
             sleep(3.5)
+            ###-------------------------------------------
+            ocr = PaddleOCR(use_angle_cls=True, lang='en')
+            keywords = {"current", "system"}
+
+            while True:
+                # Take screenshot
+                screenshot = ImageGrab.grab()
+
+                # Convert to numpy array
+                screenshot_np = np.array(screenshot)
+
+                # Run OCR
+                result = ocr.ocr(screenshot_np, cls=True)
+
+                # Extract and join text safely
+                detected_text = ''
+                if result:
+                    try:
+                        detected_text = ' '.join(
+                            line[1][0].lower()
+                            for block in result if block
+                            for line in block if line
+                        )
+                    except Exception as e:
+                        print(f"OCR parsing error: {e}")
+                        detected_text = ''
+
+                # Check for keywords
+                if all(word in detected_text for word in keywords):
+                    print("All keywords found. Exiting loop.")
+                    break
+                else:
+                    print("Keywords not found. Retrying in 5 seconds...")
+                    time.sleep(5)
+
+            ###----------------------------------------------               
             if self.is_odyssey and bookmark != -1:
                 ap.keys.send('UI_Left')
                 sleep(1)
@@ -159,6 +197,10 @@ class EDWayPoint:
                 sleep(.5)
                 ap.keys.send('UI_Down', repeat=2)
                 sleep(.5)
+                ap.keys.send('UI_Select') #I added this line
+                sleep(.5) #I added this line
+                ap.keys.send('UI_Left') #I added this line
+                sleep(1) #I added this line
                 ap.keys.send('UI_Right')
                 sleep(.5)
                 ap.keys.send('UI_Down', repeat=bookmark)
@@ -179,6 +221,45 @@ class EDWayPoint:
             # Colonisation ships are bookmarked on the galaxy map WHY!?!?!?
             ap.keys.send('GalaxyMapOpen')
             sleep(2)
+            
+            ###-------------------------------------------
+            ocr = PaddleOCR(use_angle_cls=True, lang='en')
+            keywords = {"current", "system"}
+
+            while True:
+                # Take screenshot
+                screenshot = ImageGrab.grab()
+
+                # Convert to numpy array
+                screenshot_np = np.array(screenshot)
+
+                # Run OCR
+                result = ocr.ocr(screenshot_np, cls=True)
+
+                # Extract and join text safely
+                detected_text = ''
+                if result:
+                    try:
+                        detected_text = ' '.join(
+                            line[1][0].lower()
+                            for block in result if block
+                            for line in block if line
+                        )
+                    except Exception as e:
+                        print(f"OCR parsing error: {e}")
+                        detected_text = ''
+
+                # Check for keywords
+                if all(word in detected_text for word in keywords):
+                    print("All keywords found. Exiting loop.")
+                    break
+                else:
+                    print("Keywords not found. Retrying in 5 seconds...")
+                    time.sleep(5)
+
+            ###----------------------------------------------         
+            
+            
             if self.is_odyssey and bookmark != -1:
                 ap.keys.send('UI_Left')  # Go to BOOKMARKS
                 sleep(1)
@@ -209,49 +290,52 @@ class EDWayPoint:
             return self.set_waypoint_target_odyssey(ap, target_name, target_select_cb)
               
             
-    #
-    # This sequence for the Horizons
-    #      
-    def set_waypoint_target_horizons(self, ap, target_name, target_select_cb=None) -> bool:
-    
-        ap.keys.send('GalaxyMapOpen')
-        sleep(2)
-        ap.keys.send('CycleNextPanel')
-        sleep(1)
-        ap.keys.send('UI_Select')
-        sleep(2)
-              
-        typewrite(target_name, interval=0.25)
-        sleep(1)         
   
-        # send enter key
-        ap.keys.send_key('Down', 28)
-        sleep(0.05)
-        ap.keys.send_key('Up', 28)
-        
-        sleep(7)
-        ap.keys.send('UI_Right')
-        sleep(1)
-        ap.keys.send('UI_Select')   
-        
-        # if got passed through the ship() object, lets call it to see if a target has been
-        # selected yet.. otherwise we wait.  If long route, it may take a few seconds      
-        if target_select_cb != None:
-            while not target_select_cb()['target']:
-                sleep(1)
-                
-        ap.keys.send('GalaxyMapOpen')
-        sleep(2)
-        return True
-
-  
-    #
     # This sequence for the Odyssey
  
     def set_waypoint_target_odyssey(self, ap, target_name, target_select_cb=None) -> bool:
 
         ap.keys.send('GalaxyMapOpen')
         sleep(2)
+
+        ###-------------------------------------------
+        ocr = PaddleOCR(use_angle_cls=True, lang='en')
+        keywords = {"galaxy", "map"}
+
+        while True:
+            # Take screenshot
+            screenshot = ImageGrab.grab()
+
+            # Convert to numpy array
+            screenshot_np = np.array(screenshot)
+
+            # Run OCR
+            result = ocr.ocr(screenshot_np, cls=True)
+
+            # Extract and join text safely
+            detected_text = ''
+            if result:
+                try:
+                    detected_text = ' '.join(
+                        line[1][0].lower()
+                        for block in result if block
+                        for line in block if line
+                    )
+                except Exception as e:
+                    print(f"OCR parsing error: {e}")
+                    detected_text = ''
+
+            # Check for keywords
+            if all(word in detected_text for word in keywords):
+                print("All keywords found. Exiting loop.")
+                break
+            else:
+                print("Keywords not found. Retrying in 5 seconds...")
+                time.sleep(5)
+        ###----------------------------------------------
+
+
+
 
         # navigate to and select: search field
         ap.keys.send('UI_Up')
@@ -262,19 +346,19 @@ class EDWayPoint:
         #print("Target:"+target_name)       
         # type in the System name
         typewrite(target_name, interval=0.25)
-        sleep(0.05)
+        sleep(5)
 
         # send enter key (removes focus out of input field)
         ap.keys.send_key('Down', 28)  # 28=ENTER
         sleep(0.05)
         ap.keys.send_key('Up', 28)  # 28=ENTER
         sleep(0.05)
-
+        sleep(5)
         # navigate to and select: search button
         ap.keys.send('UI_Right')
         sleep(0.05)
         ap.keys.send('UI_Select')
-
+        sleep(5)
         # zoom camera which puts focus back on the map
         ap.keys.send('CamZoomIn')
         sleep(0.05)
@@ -284,7 +368,7 @@ class EDWayPoint:
         # to the center screen, the system can be selected while the map is moving.
         ap.keys.send('UI_Select', hold=0.75)
 
-        sleep(0.05)
+        sleep(5)
 
         # if got passed through the ship() object, lets call it to see if a target has been
         # selected yet.. otherwise we wait.  If long route, it may take a few seconds
@@ -310,12 +394,12 @@ class EDWayPoint:
             ap.keys.send('UI_Down')
             ap.keys.send('UI_Select')  # Select StarPort Services
 
-            sleep(8)   # wait for new menu to finish rendering
+            sleep(20)   # wait for new menu to finish rendering
 
             ap.keys.send('UI_Down')
             ap.keys.send('UI_Select')  # Select Commodities
 
-            sleep(2.5)
+            sleep(15)
 
             # --------- SELL ----------
             if sell_down != -1:
@@ -332,7 +416,7 @@ class EDWayPoint:
                 ap.keys.send('UI_Up', repeat=3)  # make sure at top
                 ap.keys.send('UI_Down')    # Down to the Sell button (already assume sell all)
                 ap.keys.send('UI_Select')  # Select to Sell all
-
+                sleep(5)
             # TODO: Note, if the waypoint plan has sell_down != -1, then we are assuming we have
             # cargo to sell, if not we are in limbo here as the Sell button not selectable
             #  Could look at the ship_status['MarketSel'] == True (to be added), to see that we sold
@@ -340,34 +424,34 @@ class EDWayPoint:
 
             # --------- BUY ----------
             if buy_down != -1:
-                sleep(3)  # give time to popdown
+                sleep(5)  # give time to popdown
                 ap.keys.send('UI_Left')    # back to left menu
                 sleep(0.5)
                 ap.keys.send('UI_Up', repeat=2)      # go up to Buy
                 ap.keys.send('UI_Select')  # Select Buy
 
-                sleep(1.5) # give time to bring up list
+                sleep(5) # give time to bring up list
                 ap.keys.send('UI_Right')   # Go to top of commodities list
                 ap.keys.send('UI_Up', repeat=sell_down+5)  # go up sell_down times in case were not on top of list (+5 for pad)
                 ap.keys.send('UI_Down', repeat=buy_down)  # go down # of times user specified
                 ap.keys.send('UI_Select')  # Select that commodity
 
-                sleep(2) # give time to popup
+                sleep(5) # give time to popup
                 ap.keys.send('UI_Up', repeat=3)      # go up to quantity to buy (may not default to this)
                 ap.keys.send('UI_Right', hold=4.0)   # Hold down Right key to buy will fill cargo
                 ap.keys.send('UI_Down')
                 ap.keys.send('UI_Select')  # Select Buy
 
-            sleep(1.5)  # give time to popdown
+            sleep(5)  # give time to popdown
             ap.keys.send('UI_Left')    # back to left menu
             ap.keys.send('UI_Down', repeat=8)    # go down 4x to highlight Exit
             ap.keys.send('UI_Select')  # Select Exit, back to StartPort Menu
-            sleep(1) # give time to get back to menu
+            sleep(5) # give time to get back to menu
             if self.is_odyssey == True:
                 ap.keys.send('UI_Down', repeat=4)    # go down 4x to highlight Exit
 
             ap.keys.send('UI_Select')  # Select Exit, back to top menu
-            sleep(2)  # give time to popdown menu
+            sleep(5)  # give time to popdown menu
 
         elif self.waypoints[dest]['DockWithStation'] == "System Colonisation Ship":
             # We start off on the Main Menu in the Station
@@ -375,7 +459,7 @@ class EDWayPoint:
             ap.keys.send('UI_Down')
             ap.keys.send('UI_Select')  # Select StarPort Services
 
-            sleep(5)  # wait for new menu to finish rendering
+            sleep(15)  # wait for new menu to finish rendering
 
             # --------- SELL ----------
             if sell_down != -1:
@@ -389,12 +473,12 @@ class EDWayPoint:
 
                 ap.keys.send('UI_Left')  # Go to CONFIRM TRANSFER
                 ap.keys.send('UI_Select')  # Select CONFIRM TRANSFER
-                sleep(2)
+                sleep(5)
 
                 ap.keys.send('UI_Down')  # Go to EXIT
                 ap.keys.send('UI_Select')  # Select EXIT
 
-                sleep(2)  # give time to popdown menu
+                sleep(5)  # give time to popdown menu
 
 
 # this import the temp class needed for unit testing

@@ -1062,7 +1062,7 @@ class EDAutopilot:
     def dock(self):
         # if not in normal space, give a few more sections as at times it will take a little bit
         if self.jn.ship_state()['status'] != "in_space":
-            sleep(3)  # sleep a little longer
+            sleep(10)  # sleep a little longer
 
         if self.jn.ship_state()['status'] != "in_space":
             logger.error('In dock(), after wait, but still not in_space')
